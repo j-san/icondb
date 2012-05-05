@@ -1,0 +1,26 @@
+
+<html>
+    <head>
+        <title>Icon Sementic Database</title>
+		<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.js"> </script>
+        <script>
+        $(function() {
+            $('#semantic').change(function(evt) {
+                var value = this.value;
+                $.get('/api/search/'+value, function(response) {
+                    console.log(response);
+                });
+            });
+        });
+        </script>
+    </head>
+    <body>
+        <img src="https://developers.google.com/appengine/images/appengine-silver-120x30.gif" alt="Powered by Google App Engine" style="float:right;" />
+        
+        <p>Type keywords to find a matching icon or picto</p>
+        <p><input id="semantic" type="search" /><button>OK</button></p>
+
+        <p><a href="/_ah/admin">admin</a></p>
+        <p><a href="/api/test">test</a></p>
+    </body>
+</html>
