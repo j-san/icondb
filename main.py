@@ -17,29 +17,39 @@
 import webapp2
 import model
 import json
+import re
+
+uri_reg = re.compile('/api/(.*)')
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        if self.request.path == '/api/test':
-            self.create_tests()
-        data = self.icon_list()
+        action = uri_reg.match(self.request.path).group(1)
+
+        api = AppApi()
+        data = None
+        if hasattr(api, action):
+            data = getattr(api, action)(self.request)
+
         self.response.out.write(json.dumps(data,default=lambda(o):o.to_dict()))
 
-    def icon_list(self):
-        q = model.Icon.all()
-        return q.fetch(5)
-        
-    def create_tests(self):
+
+
+
+class AppApi:
+    def search(self, request):
+        search = request.get('q')
+        query = model.IconSemantic.all()
+        query.filter('description =', search)
+        return query.fetch(5)
+
+    def test(self, request):
         if model.Icon.all().filter("uri", "/favicon.ico").count() == 0:
             i = model.Icon(uri="/favicon.ico")
             i.put()
-            s = model.Semantic(description="app engine")
+            s = model.IconSemantic(description="app engine", icon=i, relevant=1)
             s.put()
-            l = model.IconSemantics(semantic=s,icon=i,relevant=1)
-            l.put()
+        
+        return self.search(request)
 
 
-
-
-app = webapp2.WSGIApplication([('/api/.*', MainHandler)],
-                              debug=True)
+app = webapp2.WSGIApplication([('/api/.*', MainHandler)], debug=True)
