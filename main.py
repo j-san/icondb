@@ -19,16 +19,17 @@ import model
 import json
 import re
 
-uri_reg = re.compile('/api/(.*)')
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        action = uri_reg.match(self.request.path).group(1)
+        parts = self.request.path.strip('/').split('/')
+        parts.pop(0) # api
+        action = parts.pop(0)
 
         api = AppApi()
-        data = None
+        data = []
         if hasattr(api, action):
-            data = getattr(api, action)(self.request)
+            data = getattr(api, action)(self.request, parts)
 
         self.response.out.write(json.dumps(data,default=lambda(o):o.to_dict()))
 
@@ -36,20 +37,22 @@ class MainHandler(webapp2.RequestHandler):
 
 
 class AppApi:
-    def search(self, request):
-        search = request.get('q')
-        query = model.IconSemantic.all()
-        query.filter('description =', search)
-        return query.fetch(5)
+    def search(self, request, parts):
+        term = request.get('q') or parts and parts.pop(0)
+        return model.Semantic.all().fetch(5)#.search(term).fetch(5)
 
-    def test(self, request):
+    def icon(self, request, parts):
+        key = parts.pop(0)
+        return model.Icon.get_by_id(int(key))
+
+    def test(self, request, parts):
         if model.Icon.all().filter("uri", "/favicon.ico").count() == 0:
             i = model.Icon(uri="/favicon.ico")
             i.put()
-            s = model.IconSemantic(description="app engine", icon=i, relevant=1)
-            s.put()
+            i.add_semantic('hello')
+            i.add_semantic('world')
         
-        return self.search(request)
+        return self.search(request, parts)
 
 
 app = webapp2.WSGIApplication([('/api/.*', MainHandler)], debug=True)
